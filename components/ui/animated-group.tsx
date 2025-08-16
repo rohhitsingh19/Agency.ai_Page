@@ -1,7 +1,6 @@
 'use client';
-import { ReactNode } from 'react';
-import { motion, Variants } from 'motion/react';
-import React from 'react';
+import React, { ReactNode } from 'react';
+import { motion, Variants } from 'framer-motion';
 
 export type PresetType =
   | 'fade'
@@ -23,8 +22,8 @@ export type AnimatedGroupProps = {
     item?: Variants;
   };
   preset?: PresetType;
-  as?: React.ElementType;
-  asChild?: React.ElementType;
+  as?: string | React.ComponentType<any>;
+  asChild?: string | React.ComponentType<any>;
 };
 
 const defaultContainerVariants: Variants = {
@@ -110,33 +109,35 @@ function AnimatedGroup({
 }: AnimatedGroupProps) {
   const selectedVariants = {
     item: addDefaultVariants(preset ? presetVariants[preset] : {}),
-    container: addDefaultVariants(defaultContainerVariants),
+    container: variants?.container || defaultContainerVariants,
   };
-  const containerVariants = variants?.container || selectedVariants.container;
-  const itemVariants = variants?.item || selectedVariants.item;
+  const containerVariants = selectedVariants.container;
+  const itemVariants = selectedVariants.item;
 
-  const MotionComponent = React.useMemo(
-    () => motion.create(as as keyof JSX.IntrinsicElements),
-    [as]
-  );
-  const MotionChild = React.useMemo(
-    () => motion.create(asChild as keyof JSX.IntrinsicElements),
-    [asChild]
-  );
+  // Create motion components with proper typing
+  const containerProps = {
+    initial: 'hidden' as const,
+    animate: 'visible' as const,
+    variants: containerVariants,
+    ...(className && { className }),
+  };
+
+  const Container = as === 'div' 
+    ? motion.div 
+    : motion(as as any);
+  
+  const Child = asChild === 'div' 
+    ? motion.div 
+    : motion(asChild as any);
 
   return (
-    <MotionComponent
-      initial='hidden'
-      animate='visible'
-      variants={containerVariants}
-      className={className}
-    >
+    <Container {...containerProps}>
       {React.Children.map(children, (child, index) => (
-        <MotionChild key={index} variants={itemVariants}>
+        <Child key={index} variants={itemVariants}>
           {child}
-        </MotionChild>
+        </Child>
       ))}
-    </MotionComponent>
+    </Container>
   );
 }
 
